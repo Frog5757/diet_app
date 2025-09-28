@@ -57,8 +57,7 @@ export async function POST(request: NextRequest) {
     usersAuth.push(newUser);
 
     // Return user without password
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...userWithoutPassword } = newUser;
+    const { password: _, ...userWithoutPassword } = newUser;
 
     return NextResponse.json({
       message: 'User registered successfully',
