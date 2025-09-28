@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Define user type
+interface User {
+  id: number;
+  email: string;
+  password: string;
+  createdAt: string;
+}
+
 // Shared storage with register route
 declare global {
-  var usersAuth: any[] | undefined;
+  var usersAuth: User[] | undefined;
 }
 
 if (!global.usersAuth) {
@@ -34,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
+    const { password, ...userWithoutPassword } = user;
 
     return NextResponse.json({
       message: 'Login successful',

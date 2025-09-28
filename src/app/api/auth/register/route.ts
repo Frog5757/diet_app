@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Define user type
+interface User {
+  id: number;
+  email: string;
+  password: string;
+  createdAt: string;
+}
+
 // Shared global storage for demo purposes
 declare global {
-  var usersAuth: any[] | undefined;
+  var usersAuth: User[] | undefined;
   var nextUserId: number | undefined;
 }
 
@@ -49,7 +57,7 @@ export async function POST(request: NextRequest) {
     usersAuth.push(newUser);
 
     // Return user without password
-    const { password: _, ...userWithoutPassword } = newUser;
+    const { password, ...userWithoutPassword } = newUser;
 
     return NextResponse.json({
       message: 'User registered successfully',

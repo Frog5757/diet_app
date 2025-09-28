@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Define food entry type
+interface FoodEntry {
+  id: number;
+  userId: number;
+  food: string;
+  calories: number;
+  protein: string;
+  quantity: number;
+  unitCalories: number;
+  unitProtein: string;
+  createdAt: string;
+}
+
 // Temporary in-memory storage for demo purposes
-let foodEntriesData: any[] = [];
+const foodEntriesData: FoodEntry[] = [];
 let nextId = 1;
 
 export async function POST(request: NextRequest) {
