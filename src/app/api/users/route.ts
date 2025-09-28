@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Define user profile type
+interface UserProfile {
+  id: number;
+  age: number;
+  gender: string;
+  height: number;
+  weight: number;
+  activityLevel: string;
+  bodyGoal: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Temporary in-memory storage for demo purposes
-let userData: any = null;
+let userData: UserProfile | null = null;
 
 export async function POST(request: NextRequest) {
   try {

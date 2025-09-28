@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import React from "react";
 import styled from "@emotion/styled";
 import { css } from "@emotion/react";
 import AuthPage from "./auth/page";
+
+interface User {
+  id: number;
+  email: string;
+  createdAt: string;
+}
 
 interface ProfileData {
   age: number;
@@ -453,7 +459,7 @@ const LogoutButton = styled.button`
 `;
 
 export default function Home() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
     age: 0,
@@ -483,7 +489,7 @@ export default function Home() {
     setIsAuthChecked(true);
   }, []);
 
-  const handleAuthSuccess = (userData: any) => {
+  const handleAuthSuccess = (userData: User) => {
     setUser(userData);
   };
 
@@ -503,7 +509,7 @@ export default function Home() {
   };
 
   // Load data on component mount
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     try {
       // Load user profile
       const userResponse = await fetch('/api/users');
@@ -520,7 +526,16 @@ export default function Home() {
       const foodResponse = await fetch('/api/food-entries');
       if (foodResponse.ok) {
         const foodData = await foodResponse.json();
-        const transformedEntries = foodData.map((entry: any) => ({
+        const transformedEntries = foodData.map((entry: {
+          id: number;
+          food: string;
+          calories: number;
+          protein: string;
+          quantity: number;
+          unitCalories: number;
+          unitProtein: string;
+          createdAt: string;
+        }) => ({
           ...entry,
           protein: parseFloat(entry.protein),
           unitProtein: parseFloat(entry.unitProtein),
@@ -531,13 +546,13 @@ export default function Home() {
     } catch (error) {
       console.error('Error loading data:', error);
     }
-  };
+  }, []);
 
   React.useEffect(() => {
     if (user) {
       loadUserData();
     }
-  }, [user]);
+  }, [user, loadUserData]);
 
   const calculateNutritionFromData = (profileData: ProfileData) => {
     let bmr: number;
@@ -573,41 +588,6 @@ export default function Home() {
     });
   };
 
-  const calculateNutrition = () => {
-    let bmr: number;
-
-    if (profile.gender === "male") {
-      bmr = 88.362 + (13.397 * profile.weight) + (4.799 * profile.height) - (5.677 * profile.age);
-    } else {
-      bmr = 447.593 + (9.247 * profile.weight) + (3.098 * profile.height) - (4.330 * profile.age);
-    }
-
-    const activityMultipliers = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9
-    };
-
-    let dailyCalories = bmr * activityMultipliers[profile.activityLevel];
-    let protein: number;
-
-    if (profile.bodyGoal === "lean_muscle") {
-      // 細マッチョ: 維持〜軽い増量、タンパク質は体重×2.0g
-      dailyCalories += 200;
-      protein = profile.weight * 2.0;
-    } else {
-      // マッチョ: しっかり増量、タンパク質は体重×2.5g
-      dailyCalories += 500;
-      protein = profile.weight * 2.5;
-    }
-
-    setResults({
-      dailyCalories: Math.round(dailyCalories),
-      protein: Math.round(protein)
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

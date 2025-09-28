@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     usersAuth.push(newUser);
 
     // Return user without password
-    const { password: _, ...userWithoutPassword } = newUser;
+    const { password: _p, ...userWithoutPassword } = newUser;
 
     return NextResponse.json({
       message: 'User registered successfully',

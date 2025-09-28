@@ -117,8 +117,14 @@ const SuccessMessage = styled.div`
   margin-bottom: 1rem;
 `;
 
+interface User {
+  id: number;
+  email: string;
+  createdAt: string;
+}
+
 interface AuthPageProps {
-  onAuthSuccess: (user: any) => void;
+  onAuthSuccess: (user: User) => void;
 }
 
 export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
@@ -162,7 +168,8 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
       } else {
         setError(data.error || 'Something went wrong');
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('Network error:', err);
       setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
