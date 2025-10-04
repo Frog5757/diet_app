@@ -6,6 +6,10 @@ import styled from "@emotion/styled";
 import { css } from "@emotion/react";
 import AuthPage from "./auth/page";
 import { exerciseDatabase, calculateCalories, getExerciseById } from "../utils/exerciseDatabase";
+import WarningIcon from '@mui/icons-material/Warning';
+import ErrorIcon from '@mui/icons-material/Error';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 
 interface User {
   id: number;
@@ -138,8 +142,7 @@ const inputStyles = css`
   transition: all 0.15s ease-in-out;
 
   &:focus {
-    ring: 2px;
-    ring-color: #3b82f6;
+    outline: 2px solid #3b82f6;
     border-color: #3b82f6;
   }
 `;
@@ -170,8 +173,7 @@ const Button = styled.button`
   }
 
   &:focus {
-    ring: 2px;
-    ring-color: #3b82f6;
+    outline: 2px solid #3b82f6;
   }
 `;
 
@@ -323,63 +325,6 @@ const DeleteButton = styled.button`
   }
 `;
 
-const CalorieSummaryCard = styled.div`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  position: sticky;
-  top: 1rem;
-`;
-
-const CalorieSummaryTitle = styled.h3`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
-`;
-
-const CalorieProgressBar = styled.div`
-  width: 100%;
-  height: 8px;
-  background-color: #e5e7eb;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 1rem;
-`;
-
-const CalorieProgress = styled.div<{ percentage: number }>`
-  height: 100%;
-  background-color: ${props => props.percentage > 100 ? '#ef4444' : '#10b981'};
-  width: ${props => Math.min(props.percentage, 100)}%;
-  transition: width 0.3s ease;
-`;
-
-const CalorieStats = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const CalorieStat = styled.div`
-  text-align: center;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 0.375rem;
-`;
-
-const CalorieStatValue = styled.div`
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #1f2937;
-`;
-
-const CalorieStatLabel = styled.div`
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-`;
 
 const CircularProgress = styled.div`
   position: relative;
@@ -518,6 +463,65 @@ const PFCUnit = styled.span`
   font-weight: normal;
 `;
 
+// 状態表示用コンポーネント
+const StatusContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+`;
+
+const StatusIconWrapper = styled.div<{ status: 'success' | 'warning' | 'error' | 'info' }>`
+  display: flex;
+  align-items: center;
+  color: ${props => {
+    switch (props.status) {
+      case 'success': return '#10b981';
+      case 'warning': return '#f59e0b';
+      case 'error': return '#ef4444';
+      case 'info': return '#3b82f6';
+      default: return '#6b7280';
+    }
+  }};
+`;
+
+const StatusText = styled.span<{ status: 'success' | 'warning' | 'error' | 'info' }>`
+  color: ${props => {
+    switch (props.status) {
+      case 'success': return '#065f46';
+      case 'warning': return '#92400e';
+      case 'error': return '#991b1b';
+      case 'info': return '#1e40af';
+      default: return '#374151';
+    }
+  }};
+`;
+
+const StatusBackground = styled(StatusContainer)<{ status: 'success' | 'warning' | 'error' | 'info' }>`
+  background-color: ${props => {
+    switch (props.status) {
+      case 'success': return '#ecfdf5';
+      case 'warning': return '#fffbeb';
+      case 'error': return '#fef2f2';
+      case 'info': return '#eff6ff';
+      default: return '#f9fafb';
+    }
+  }};
+  border: 1px solid ${props => {
+    switch (props.status) {
+      case 'success': return '#d1fae5';
+      case 'warning': return '#fde68a';
+      case 'error': return '#fecaca';
+      case 'info': return '#dbeafe';
+      default: return '#e5e7eb';
+    }
+  }};
+`;
+
 const NutritionCard = styled.div`
   background-color: white;
   border-radius: 0.5rem;
@@ -533,12 +537,6 @@ const NutritionCardTitle = styled.h3`
   margin-bottom: 1rem;
 `;
 
-const NutritionStatus = styled.div<{ isComplete: boolean }>`
-  font-size: 0.875rem;
-  color: ${props => props.isComplete ? '#10b981' : '#ef4444'};
-  font-weight: 500;
-  margin-top: 0.5rem;
-`;
 
 const LogoutButton = styled.button`
   position: absolute;
@@ -936,9 +934,8 @@ export default function Home() {
   const totalConsumedCarbs = foodEntries.reduce((sum, entry) => sum + entry.carbs, 0);
   const totalBurnedCalories = exerciseEntries.reduce((sum, entry) => sum + entry.caloriesBurned, 0);
 
-  // 目標カロリー + 運動で消費したカロリー - 摂取カロリー = 残りカロリー
-  const remainingCalories = results ? results.dailyCalories + totalBurnedCalories - totalConsumedCalories : 0;
-  const remainingProtein = results ? results.protein - totalConsumedProtein : 0;
+
+
   // 運動を考慮したカロリー進捗計算: 摂取カロリー / (目標カロリー + 運動消費カロリー)
   const adjustedDailyCalories = results ? results.dailyCalories + totalBurnedCalories : 0;
   const calorieProgress = adjustedDailyCalories > 0 ? (totalConsumedCalories / adjustedDailyCalories) * 100 : 0;
@@ -947,6 +944,42 @@ export default function Home() {
   // PFC進捗率計算
   const fatProgress = results ? (totalConsumedFat / results.fat) * 100 : 0;
   const carbsProgress = results ? (totalConsumedCarbs / results.carbs) * 100 : 0;
+
+  // 状態判定とアイコン表示の関数
+  const getNutritionStatus = (consumed: number, target: number, type: 'calories' | 'protein' | 'fat' | 'carbs') => {
+    const progress = target > 0 ? (consumed / target) * 100 : 0;
+    const remaining = target - consumed;
+
+    if (progress >= 100) {
+      return {
+        status: 'error' as const,
+        icon: <ErrorIcon sx={{ fontSize: 18 }} />,
+        message: `${Math.abs(remaining).toFixed(0)}${type === 'calories' ? 'kcal' : 'g'} オーバー`,
+        bgStatus: 'error' as const
+      };
+    } else if (progress >= 80) {
+      return {
+        status: 'warning' as const,
+        icon: <WarningIcon sx={{ fontSize: 18 }} />,
+        message: `あと${remaining.toFixed(0)}${type === 'calories' ? 'kcal' : 'g'}（目標まで近い！）`,
+        bgStatus: 'warning' as const
+      };
+    } else if (progress >= 50) {
+      return {
+        status: 'info' as const,
+        icon: <TrendingUpIcon sx={{ fontSize: 18 }} />,
+        message: `あと${remaining.toFixed(0)}${type === 'calories' ? 'kcal' : 'g'} 摂取可能`,
+        bgStatus: 'info' as const
+      };
+    } else {
+      return {
+        status: 'success' as const,
+        icon: <TrendingDownIcon sx={{ fontSize: 18 }} />,
+        message: `あと${remaining.toFixed(0)}${type === 'calories' ? 'kcal' : 'g'} 摂取可能（余裕あり）`,
+        bgStatus: 'success' as const
+      };
+    }
+  };
 
   // Show loading state while checking authentication
   if (!isAuthChecked) {
@@ -1281,19 +1314,32 @@ export default function Home() {
                     </CircularProgressUnit>
                   </CircularProgressLabel>
                 </CircularProgress>
-                <NutritionStatus isComplete={remainingCalories <= 0}>
-                  {totalBurnedCalories > 0 && (
-                    <div style={{ fontSize: '0.75rem', marginBottom: '0.5rem', color: '#10b981' }}>
-                      🏃‍♂️ 運動: +{totalBurnedCalories}kcal
-                    </div>
-                  )}
-                  {remainingCalories > 0
-                    ? `あと ${remainingCalories}kcal 摂取可能`
-                    : remainingCalories === 0
-                    ? "目標達成！"
-                    : `${Math.abs(remainingCalories)}kcal オーバー`
-                  }
-                </NutritionStatus>
+                {/* 運動による追加カロリー表示 */}
+                {totalBurnedCalories > 0 && (
+                  <StatusBackground status="success">
+                    <StatusIconWrapper status="success">
+                      <TrendingUpIcon sx={{ fontSize: 18 }} />
+                    </StatusIconWrapper>
+                    <StatusText status="success">
+                      運動で +{totalBurnedCalories}kcal 追加！
+                    </StatusText>
+                  </StatusBackground>
+                )}
+
+                {/* カロリー摂取状況 */}
+                {(() => {
+                  const calorieStatus = getNutritionStatus(totalConsumedCalories, adjustedDailyCalories, 'calories');
+                  return (
+                    <StatusBackground status={calorieStatus.bgStatus}>
+                      <StatusIconWrapper status={calorieStatus.status}>
+                        {calorieStatus.icon}
+                      </StatusIconWrapper>
+                      <StatusText status={calorieStatus.status}>
+                        {calorieStatus.message}
+                      </StatusText>
+                    </StatusBackground>
+                  );
+                })()}
 
                 {/* PFCバランス円グラフ */}
                 <PFCBreakdown>
@@ -1415,14 +1461,20 @@ export default function Home() {
                     </CircularProgressUnit>
                   </CircularProgressLabel>
                 </CircularProgress>
-                <NutritionStatus isComplete={remainingProtein <= 0}>
-                  {remainingProtein > 0
-                    ? `あと ${remainingProtein.toFixed(1)}g 必要`
-                    : remainingProtein === 0
-                    ? "目標達成！"
-                    : `${Math.abs(remainingProtein).toFixed(1)}g 達成済み`
-                  }
-                </NutritionStatus>
+                {/* タンパク質摂取状況 */}
+                {(() => {
+                  const proteinStatus = getNutritionStatus(totalConsumedProtein, results?.protein || 0, 'protein');
+                  return (
+                    <StatusBackground status={proteinStatus.bgStatus}>
+                      <StatusIconWrapper status={proteinStatus.status}>
+                        {proteinStatus.icon}
+                      </StatusIconWrapper>
+                      <StatusText status={proteinStatus.status}>
+                        {proteinStatus.message}
+                      </StatusText>
+                    </StatusBackground>
+                  );
+                })()}
               </NutritionCard>
             </>
           )}
