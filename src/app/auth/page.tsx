@@ -135,7 +135,6 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [gender, setGender] = useState<"male" | "female">("male");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
-  const [activityLevel, setActivityLevel] = useState<"sedentary" | "light" | "moderate" | "active" | "very_active">("sedentary");
   const [bodyGoal, setBodyGoal] = useState<"lean_muscle" | "bulk_muscle">("lean_muscle");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -159,7 +158,6 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
               gender,
               height: parseInt(height),
               weight: parseInt(weight),
-              activityLevel,
               bodyGoal
             }
           };
@@ -189,7 +187,6 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           setHeight("");
           setWeight("");
           setGender("male");
-          setActivityLevel("sedentary");
           setBodyGoal("lean_muscle");
         }
       } else {
@@ -288,27 +285,6 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 />
               </FormField>
 
-              <FormField>
-                <Label>活動レベル</Label>
-                <select
-                  value={activityLevel}
-                  onChange={(e) => setActivityLevel(e.target.value as "sedentary" | "light" | "moderate" | "active" | "very_active")}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem 0.75rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem',
-                    outline: 'none'
-                  }}
-                  required
-                >
-                  <option value="sedentary">ほとんど運動しない</option>
-                  <option value="light">軽い運動 (週1-3回)</option>
-                  <option value="moderate">適度な運動 (週3-5回)</option>
-                  <option value="active">激しい運動 (週6-7回)</option>
-                  <option value="very_active">非常に激しい運動 (1日2回、激しい運動)</option>
-                </select>
-              </FormField>
 
               <FormField>
                 <Label>目標体型</Label>
@@ -346,7 +322,6 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
             setHeight("");
             setWeight("");
             setGender("male");
-            setActivityLevel("sedentary");
             setBodyGoal("lean_muscle");
           }
         }}>

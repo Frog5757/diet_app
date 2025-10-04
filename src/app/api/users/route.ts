@@ -7,7 +7,6 @@ interface UserProfile {
   gender: string;
   height: number;
   weight: number;
-  activityLevel: string;
   bodyGoal: string;
   createdAt: string;
   updatedAt: string;
@@ -19,10 +18,10 @@ let userData: UserProfile | null = null;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, age, gender, height, weight, activityLevel, bodyGoal } = body;
+    const { userId, age, gender, height, weight, bodyGoal } = body;
 
     // Simple validation
-    if (!age || !gender || !height || !weight || !activityLevel || !bodyGoal) {
+    if (!age || !gender || !height || !weight || !bodyGoal) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
@@ -36,7 +35,6 @@ export async function POST(request: NextRequest) {
       gender,
       height: parseInt(height),
       weight: parseInt(weight),
-      activityLevel,
       bodyGoal,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

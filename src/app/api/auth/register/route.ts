@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate profile if provided
-    if (profile && (!profile.age || !profile.gender || !profile.height || !profile.weight || !profile.activityLevel || !profile.bodyGoal)) {
+    if (profile && (!profile.age || !profile.gender || !profile.height || !profile.weight || !profile.bodyGoal)) {
       return NextResponse.json(
         { error: 'All profile fields are required' },
         { status: 400 }

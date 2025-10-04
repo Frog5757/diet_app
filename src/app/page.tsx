@@ -5,6 +5,7 @@ import React from "react";
 import styled from "@emotion/styled";
 import { css } from "@emotion/react";
 import AuthPage from "./auth/page";
+import { exerciseDatabase, calculateCalories, getExerciseById } from "../utils/exerciseDatabase";
 
 interface User {
   id: number;
@@ -17,8 +18,17 @@ interface ProfileData {
   gender: "male" | "female";
   height: number;
   weight: number;
-  activityLevel: "sedentary" | "light" | "moderate" | "active" | "very_active";
   bodyGoal: "lean_muscle" | "bulk_muscle";
+}
+
+interface ExerciseEntry {
+  id: string;
+  exercise: string;
+  exerciseType?: string; // 運動タイプID
+  amount: number; // 回数/時間/距離
+  unit: string; // 単位
+  caloriesBurned: number;
+  timestamp: Date;
 }
 
 interface Results {
@@ -466,12 +476,17 @@ export default function Home() {
     gender: "male",
     height: 0,
     weight: 0,
-    activityLevel: "sedentary",
     bodyGoal: "lean_muscle"
   });
+  const [exerciseEntries, setExerciseEntries] = useState<ExerciseEntry[]>([]);
   const [results, setResults] = useState<Results | null>(null);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [currentFood, setCurrentFood] = useState({ food: "", calories: "", protein: "", quantity: "1" });
+  const [currentExercise, setCurrentExercise] = useState({
+    exerciseType: "",
+    amount: "",
+    calculatedCalories: 0
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   // Check for existing user session
@@ -501,11 +516,11 @@ export default function Home() {
       gender: "male",
       height: 0,
       weight: 0,
-      activityLevel: "sedentary",
       bodyGoal: "lean_muscle"
     });
     setResults(null);
     setFoodEntries([]);
+    setExerciseEntries([]);
   };
 
   // Load data on component mount
@@ -543,6 +558,28 @@ export default function Home() {
         }));
         setFoodEntries(transformedEntries);
       }
+
+      // Load exercise entries
+      const exerciseResponse = await fetch('/api/exercise-entries');
+      if (exerciseResponse.ok) {
+        const exerciseData = await exerciseResponse.json();
+        const transformedExerciseEntries = exerciseData.map((entry: {
+          id: number;
+          exercise: string;
+          exerciseType?: string;
+          amount?: number;
+          unit?: string;
+          duration?: number; // 旧データ対応
+          caloriesBurned: number;
+          createdAt: string;
+        }) => ({
+          ...entry,
+          amount: entry.amount || entry.duration || 0, // 旧データの場合はdurationを使用
+          unit: entry.unit || '分', // 旧データの場合は分を使用
+          timestamp: new Date(entry.createdAt)
+        }));
+        setExerciseEntries(transformedExerciseEntries);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -557,28 +594,22 @@ export default function Home() {
   const calculateNutritionFromData = (profileData: ProfileData) => {
     let bmr: number;
 
+    // Harris-Benedict equation for BMR calculation
     if (profileData.gender === "male") {
       bmr = 88.362 + (13.397 * profileData.weight) + (4.799 * profileData.height) - (5.677 * profileData.age);
     } else {
       bmr = 447.593 + (9.247 * profileData.weight) + (3.098 * profileData.height) - (4.330 * profileData.age);
     }
 
-    const activityMultipliers = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9
-    };
-
-    let dailyCalories = bmr * activityMultipliers[profileData.activityLevel];
+    // Base calories = BMR * sedentary multiplier (1.2) + goal calories
+    let dailyCalories = bmr * 1.2;
     let protein: number;
 
     if (profileData.bodyGoal === "lean_muscle") {
-      dailyCalories += 200;
+      dailyCalories += 200; // 細マッチョ: 軽い増量
       protein = profileData.weight * 2.0;
     } else {
-      dailyCalories += 500;
+      dailyCalories += 500; // マッチョ: しっかり増量
       protein = profileData.weight * 2.5;
     }
 
@@ -674,11 +705,115 @@ export default function Home() {
     }
   };
 
+  // 運動量変更時のカロリー自動計算
+  const handleExerciseAmountChange = (amount: string) => {
+    setCurrentExercise(prev => {
+      const newAmount = parseFloat(amount) || 0;
+      let calculatedCalories = 0;
+
+      if (prev.exerciseType && newAmount > 0 && profile.weight > 0) {
+        const exercise = getExerciseById(prev.exerciseType);
+        if (exercise) {
+          calculatedCalories = calculateCalories(exercise, newAmount, profile.weight);
+        }
+      }
+
+      return {
+        ...prev,
+        amount,
+        calculatedCalories
+      };
+    });
+  };
+
+  // 運動タイプ変更時の処理
+  const handleExerciseTypeChange = (exerciseTypeId: string) => {
+    setCurrentExercise(prev => {
+      const amount = parseFloat(prev.amount) || 0;
+      let calculatedCalories = 0;
+
+      if (exerciseTypeId && amount > 0 && profile.weight > 0) {
+        const exercise = getExerciseById(exerciseTypeId);
+        if (exercise) {
+          calculatedCalories = calculateCalories(exercise, amount, profile.weight);
+        }
+      }
+
+      return {
+        exerciseType: exerciseTypeId,
+        amount: prev.amount,
+        calculatedCalories
+      };
+    });
+  };
+
+  const handleAddExercise = async () => {
+    if (currentExercise.exerciseType && currentExercise.amount && currentExercise.calculatedCalories > 0) {
+      const exercise = getExerciseById(currentExercise.exerciseType);
+      if (!exercise) return;
+
+      try {
+        const response = await fetch('/api/exercise-entries', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            exercise: exercise.name,
+            exerciseType: currentExercise.exerciseType,
+            amount: parseFloat(currentExercise.amount),
+            unit: exercise.unitLabel,
+            caloriesBurned: currentExercise.calculatedCalories,
+          }),
+        });
+
+        if (response.ok) {
+          const savedEntry = await response.json();
+          const newEntry: ExerciseEntry = {
+            ...savedEntry,
+            timestamp: new Date(savedEntry.createdAt)
+          };
+          setExerciseEntries(prev => [newEntry, ...prev]);
+          setCurrentExercise({
+            exerciseType: "",
+            amount: "",
+            calculatedCalories: 0
+          });
+        } else {
+          console.error('Failed to save exercise entry');
+        }
+      } catch (error) {
+        console.error('Error saving exercise entry:', error);
+      }
+    }
+  };
+
+  const handleDeleteExercise = async (entryId: string | number) => {
+    try {
+      const response = await fetch(`/api/exercise-entries?id=${entryId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setExerciseEntries(prev => prev.filter(entry => entry.id !== entryId));
+      } else {
+        console.error('Failed to delete exercise entry');
+      }
+    } catch (error) {
+      console.error('Error deleting exercise entry:', error);
+    }
+  };
+
   const totalConsumedCalories = foodEntries.reduce((sum, entry) => sum + entry.calories, 0);
   const totalConsumedProtein = foodEntries.reduce((sum, entry) => sum + entry.protein, 0);
-  const remainingCalories = results ? results.dailyCalories - totalConsumedCalories : 0;
+  const totalBurnedCalories = exerciseEntries.reduce((sum, entry) => sum + entry.caloriesBurned, 0);
+
+  // 目標カロリー + 運動で消費したカロリー - 摂取カロリー = 残りカロリー
+  const remainingCalories = results ? results.dailyCalories + totalBurnedCalories - totalConsumedCalories : 0;
   const remainingProtein = results ? results.protein - totalConsumedProtein : 0;
-  const calorieProgress = results ? (totalConsumedCalories / results.dailyCalories) * 100 : 0;
+  // 運動を考慮したカロリー進捗計算: 摂取カロリー / (目標カロリー + 運動消費カロリー)
+  const adjustedDailyCalories = results ? results.dailyCalories + totalBurnedCalories : 0;
+  const calorieProgress = adjustedDailyCalories > 0 ? (totalConsumedCalories / adjustedDailyCalories) * 100 : 0;
   const proteinProgress = results ? (totalConsumedProtein / results.protein) * 100 : 0;
 
   // Show loading state while checking authentication
@@ -743,6 +878,92 @@ export default function Home() {
             <Button type="submit">記録する</Button>
           </FoodInputForm>
 
+          {/* 運動入力フォーム */}
+          <FoodInputForm onSubmit={(e) => { e.preventDefault(); handleAddExercise(); }}>
+            <FormTitle>🏃‍♂️ 運動を記録</FormTitle>
+            <FoodInputGrid>
+              <div>
+                <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem', display: 'block' }}>
+                  運動の種類
+                </label>
+                <select
+                  value={currentExercise.exerciseType}
+                  onChange={(e) => handleExerciseTypeChange(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem 0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    outline: 'none'
+                  }}
+                  required
+                >
+                  <option value="">運動を選択</option>
+                  {exerciseDatabase.map((exercise) => (
+                    <option key={exercise.id} value={exercise.id}>
+                      {exercise.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {currentExercise.exerciseType && (
+                <>
+                  <div>
+                    <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem', display: 'block' }}>
+                      {getExerciseById(currentExercise.exerciseType)?.unitLabel || '数値'}
+                    </label>
+                    <Input
+                      type="number"
+                      value={currentExercise.amount}
+                      onChange={(e) => handleExerciseAmountChange(e.target.value)}
+                      placeholder={`${getExerciseById(currentExercise.exerciseType)?.unitLabel || '数値'}を入力`}
+                      min="0"
+                      step={getExerciseById(currentExercise.exerciseType)?.unit === 'distance' ? '0.1' : '1'}
+                      required
+                    />
+                  </div>
+
+                  <div style={{
+                    gridColumn: 'span 2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem',
+                    backgroundColor: '#f3f4f6',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem'
+                  }}>
+                    <span>💪 推定消費カロリー:</span>
+                    <span style={{ fontWeight: 'bold', color: '#059669' }}>
+                      {currentExercise.calculatedCalories}kcal
+                    </span>
+                  </div>
+                </>
+              )}
+            </FoodInputGrid>
+
+            {currentExercise.exerciseType && (
+              <div style={{
+                fontSize: '0.75rem',
+                color: '#6b7280',
+                marginTop: '0.5rem',
+                padding: '0.5rem',
+                backgroundColor: '#f9fafb',
+                borderRadius: '0.25rem'
+              }}>
+                💡 {getExerciseById(currentExercise.exerciseType)?.description}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={!currentExercise.exerciseType || !currentExercise.amount || currentExercise.calculatedCalories === 0}
+            >
+              記録する
+            </Button>
+          </FoodInputForm>
+
           {/* 食事記録一覧 */}
           <div>
             <FormTitle>📝 今日の食事記録</FormTitle>
@@ -774,6 +995,37 @@ export default function Home() {
                         </span>
                       )}
                       <DeleteButton onClick={() => handleDeleteFood(entry.id)}>
+                        削除
+                      </DeleteButton>
+                    </FoodNutrients>
+                  </FoodEntryItem>
+                ))
+              )}
+            </FoodEntryList>
+          </div>
+
+          {/* 運動記録一覧 */}
+          <div>
+            <FormTitle>🏃‍♂️ 今日の運動記録</FormTitle>
+            <FoodEntryList>
+              {exerciseEntries.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>
+                  まだ運動が記録されていません
+                </div>
+              ) : (
+                exerciseEntries.map((entry) => (
+                  <FoodEntryItem key={entry.id}>
+                    <FoodEntryHeader>
+                      <FoodName>{entry.exercise}</FoodName>
+                      <FoodTime>{entry.timestamp.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</FoodTime>
+                    </FoodEntryHeader>
+                    <FoodNutrients>
+                      <span>📊 {entry.amount}{entry.unit}</span>
+                      <span>🔥 {entry.caloriesBurned}kcal</span>
+                      <DeleteButton
+                        onClick={() => handleDeleteExercise(entry.id)}
+                        type="button"
+                      >
                         削除
                       </DeleteButton>
                     </FoodNutrients>
@@ -831,19 +1083,6 @@ export default function Home() {
                 />
               </FormField>
 
-              <FormField>
-                <Label>活動レベル</Label>
-                <Select
-                  value={profile.activityLevel}
-                  onChange={(e) => setProfile(prev => ({ ...prev, activityLevel: e.target.value as ProfileData["activityLevel"] }))}
-                >
-                  <option value="sedentary">ほとんど運動しない</option>
-                  <option value="light">軽い運動（週1-3回）</option>
-                  <option value="moderate">中程度の運動（週3-5回）</option>
-                  <option value="active">活発な運動（週6-7回）</option>
-                  <option value="very_active">非常に活発（1日2回運動）</option>
-                </Select>
-              </FormField>
 
               <FormField>
                 <Label>目標体型</Label>
@@ -888,11 +1127,16 @@ export default function Home() {
                       {Math.round(calorieProgress)}%
                     </CircularProgressValue>
                     <CircularProgressUnit>
-                      {totalConsumedCalories} / {results.dailyCalories}
+                      {totalConsumedCalories} / {adjustedDailyCalories}
                     </CircularProgressUnit>
                   </CircularProgressLabel>
                 </CircularProgress>
                 <NutritionStatus isComplete={remainingCalories <= 0}>
+                  {totalBurnedCalories > 0 && (
+                    <div style={{ fontSize: '0.75rem', marginBottom: '0.5rem', color: '#10b981' }}>
+                      🏃‍♂️ 運動: +{totalBurnedCalories}kcal
+                    </div>
+                  )}
                   {remainingCalories > 0
                     ? `あと ${remainingCalories}kcal 摂取可能`
                     : remainingCalories === 0
