@@ -131,6 +131,12 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState<"male" | "female">("male");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [activityLevel, setActivityLevel] = useState<"sedentary" | "light" | "moderate" | "active" | "very_active">("sedentary");
+  const [bodyGoal, setBodyGoal] = useState<"lean_muscle" | "bulk_muscle">("lean_muscle");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -143,12 +149,27 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
     try {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const requestBody = isLogin
+        ? { email, password }
+        : {
+            email,
+            password,
+            profile: {
+              age: parseInt(age),
+              gender,
+              height: parseInt(height),
+              weight: parseInt(weight),
+              activityLevel,
+              bodyGoal
+            }
+          };
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -164,6 +185,12 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           setIsLogin(true);
           setEmail("");
           setPassword("");
+          setAge("");
+          setHeight("");
+          setWeight("");
+          setGender("male");
+          setActivityLevel("sedentary");
+          setBodyGoal("lean_muscle");
         }
       } else {
         setError(data.error || 'Something went wrong');
@@ -207,6 +234,103 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
             />
           </FormField>
 
+          {!isLogin && (
+            <>
+              <FormField>
+                <Label>年齢</Label>
+                <Input
+                  type="number"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder="年齢を入力"
+                  required
+                />
+              </FormField>
+
+              <FormField>
+                <Label>性別</Label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as "male" | "female")}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem 0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    outline: 'none'
+                  }}
+                  required
+                >
+                  <option value="male">男性</option>
+                  <option value="female">女性</option>
+                </select>
+              </FormField>
+
+              <FormField>
+                <Label>身長 (cm)</Label>
+                <Input
+                  type="number"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  placeholder="身長を入力"
+                  required
+                />
+              </FormField>
+
+              <FormField>
+                <Label>体重 (kg)</Label>
+                <Input
+                  type="number"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  placeholder="体重を入力"
+                  required
+                />
+              </FormField>
+
+              <FormField>
+                <Label>活動レベル</Label>
+                <select
+                  value={activityLevel}
+                  onChange={(e) => setActivityLevel(e.target.value as "sedentary" | "light" | "moderate" | "active" | "very_active")}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem 0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    outline: 'none'
+                  }}
+                  required
+                >
+                  <option value="sedentary">ほとんど運動しない</option>
+                  <option value="light">軽い運動 (週1-3回)</option>
+                  <option value="moderate">適度な運動 (週3-5回)</option>
+                  <option value="active">激しい運動 (週6-7回)</option>
+                  <option value="very_active">非常に激しい運動 (1日2回、激しい運動)</option>
+                </select>
+              </FormField>
+
+              <FormField>
+                <Label>目標体型</Label>
+                <select
+                  value={bodyGoal}
+                  onChange={(e) => setBodyGoal(e.target.value as "lean_muscle" | "bulk_muscle")}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem 0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    outline: 'none'
+                  }}
+                  required
+                >
+                  <option value="lean_muscle">細マッチョ</option>
+                  <option value="bulk_muscle">マッチョ</option>
+                </select>
+              </FormField>
+            </>
+          )}
+
           <Button type="submit" disabled={isLoading}>
             {isLoading ? '処理中...' : (isLogin ? 'ログイン' : '会員登録')}
           </Button>
@@ -216,6 +340,15 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           setIsLogin(!isLogin);
           setError("");
           setSuccess("");
+          if (!isLogin) {
+            // Clear profile fields when switching to login
+            setAge("");
+            setHeight("");
+            setWeight("");
+            setGender("male");
+            setActivityLevel("sedentary");
+            setBodyGoal("lean_muscle");
+          }
         }}>
           {isLogin ? '新規会員登録はこちら' : 'ログインはこちら'}
         </ToggleButton>

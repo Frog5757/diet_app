@@ -27,12 +27,20 @@ const usersAuth = global.usersAuth;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, profile } = body;
 
     // Simple validation
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate profile if provided
+    if (profile && (!profile.age || !profile.gender || !profile.height || !profile.weight || !profile.activityLevel || !profile.bodyGoal)) {
+      return NextResponse.json(
+        { error: 'All profile fields are required' },
         { status: 400 }
       );
     }
@@ -55,6 +63,28 @@ export async function POST(request: NextRequest) {
     };
 
     usersAuth.push(newUser);
+
+    // Save profile data if provided
+    if (profile) {
+      try {
+        const profileResponse = await fetch(`${request.headers.get('origin') || 'http://localhost:3000'}/api/users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: newUser.id,
+            ...profile
+          }),
+        });
+
+        if (!profileResponse.ok) {
+          console.error('Failed to save profile data');
+        }
+      } catch (error) {
+        console.error('Error saving profile:', error);
+      }
+    }
 
     // Return user without password
     const { password: _p, ...userWithoutPassword } = newUser;

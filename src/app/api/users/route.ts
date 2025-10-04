@@ -19,7 +19,7 @@ let userData: UserProfile | null = null;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { age, gender, height, weight, activityLevel, bodyGoal } = body;
+    const { userId, age, gender, height, weight, activityLevel, bodyGoal } = body;
 
     // Simple validation
     if (!age || !gender || !height || !weight || !activityLevel || !bodyGoal) {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Store user data in memory (for demo)
     userData = {
-      id: 1,
+      id: userId || 1,
       age: parseInt(age),
       gender,
       height: parseInt(height),
