@@ -41,9 +41,13 @@ interface FoodEntry {
   food: string;
   calories: number;
   protein: number;
+  fat: number;
+  carbs: number;
   quantity: number;
   unitCalories: number;
   unitProtein: number;
+  unitFat: number;
+  unitCarbs: number;
   timestamp: Date;
 }
 
@@ -428,6 +432,90 @@ const CircularProgressUnit = styled.div`
   margin-top: 0.25rem;
 `;
 
+// 小さなPFC円グラフ用
+const SmallCircularProgress = styled.div`
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 0.5rem;
+`;
+
+const SmallCircularProgressSvg = styled.svg`
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+`;
+
+const SmallCircularProgressBackground = styled.circle`
+  fill: none;
+  stroke: #e5e7eb;
+  stroke-width: 4;
+`;
+
+const SmallCircularProgressSegment = styled.circle<{
+  percentage: number;
+  offset: number;
+  color: string;
+}>`
+  fill: none;
+  stroke: ${props => props.color};
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: ${props => {
+    const circumference = 2 * Math.PI * 25;
+    const strokeDasharray = props.percentage * circumference / 100;
+    return `${strokeDasharray} ${circumference}`;
+  }};
+  stroke-dashoffset: ${props => {
+    const circumference = 2 * Math.PI * 25;
+    return -props.offset * circumference / 100;
+  }};
+  transition: stroke-dasharray 0.3s ease, stroke-dashoffset 0.3s ease;
+`;
+
+const SmallCircularProgressLabel = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+`;
+
+const SmallCircularProgressValue = styled.div`
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #1f2937;
+`;
+
+const PFCBreakdown = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
+const PFCItem = styled.div`
+  text-align: center;
+`;
+
+const PFCLabel = styled.div`
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+`;
+
+const PFCValue = styled.div`
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+`;
+
+const PFCUnit = styled.span`
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: normal;
+`;
+
 const NutritionCard = styled.div`
   background-color: white;
   border-radius: 0.5rem;
@@ -481,7 +569,14 @@ export default function Home() {
   const [exerciseEntries, setExerciseEntries] = useState<ExerciseEntry[]>([]);
   const [results, setResults] = useState<Results | null>(null);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
-  const [currentFood, setCurrentFood] = useState({ food: "", calories: "", protein: "", quantity: "1" });
+  const [currentFood, setCurrentFood] = useState({
+    food: "",
+    calories: "",
+    protein: "",
+    fat: "",
+    carbs: "",
+    quantity: "1"
+  });
   const [currentExercise, setCurrentExercise] = useState({
     exerciseType: "",
     amount: "",
@@ -546,14 +641,22 @@ export default function Home() {
           food: string;
           calories: number;
           protein: string;
+          fat?: string;
+          carbs?: string;
           quantity: number;
           unitCalories: number;
           unitProtein: string;
+          unitFat?: string;
+          unitCarbs?: string;
           createdAt: string;
         }) => ({
           ...entry,
           protein: parseFloat(entry.protein),
+          fat: parseFloat(entry.fat || '0'),
+          carbs: parseFloat(entry.carbs || '0'),
           unitProtein: parseFloat(entry.unitProtein),
+          unitFat: parseFloat(entry.unitFat || '0'),
+          unitCarbs: parseFloat(entry.unitCarbs || '0'),
           timestamp: new Date(entry.createdAt)
         }));
         setFoodEntries(transformedEntries);
@@ -649,9 +752,11 @@ export default function Home() {
 
   const handleFoodSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentFood.food && currentFood.calories && currentFood.protein && currentFood.quantity) {
+    if (currentFood.food && currentFood.calories && currentFood.protein && currentFood.fat && currentFood.carbs && currentFood.quantity) {
       const unitCalories = parseInt(currentFood.calories);
       const unitProtein = parseFloat(currentFood.protein);
+      const unitFat = parseFloat(currentFood.fat);
+      const unitCarbs = parseFloat(currentFood.carbs);
       const quantity = parseInt(currentFood.quantity);
 
       try {
@@ -664,9 +769,13 @@ export default function Home() {
             food: currentFood.food,
             calories: unitCalories * quantity,
             protein: unitProtein * quantity,
+            fat: unitFat * quantity,
+            carbs: unitCarbs * quantity,
             quantity: quantity,
             unitCalories: unitCalories,
             unitProtein: unitProtein,
+            unitFat: unitFat,
+            unitCarbs: unitCarbs,
           }),
         });
 
@@ -675,11 +784,15 @@ export default function Home() {
           const newEntry: FoodEntry = {
             ...savedEntry,
             protein: parseFloat(savedEntry.protein),
+            fat: parseFloat(savedEntry.fat),
+            carbs: parseFloat(savedEntry.carbs),
             unitProtein: parseFloat(savedEntry.unitProtein),
+            unitFat: parseFloat(savedEntry.unitFat),
+            unitCarbs: parseFloat(savedEntry.unitCarbs),
             timestamp: new Date(savedEntry.createdAt)
           };
           setFoodEntries(prev => [newEntry, ...prev]);
-          setCurrentFood({ food: "", calories: "", protein: "", quantity: "1" });
+          setCurrentFood({ food: "", calories: "", protein: "", fat: "", carbs: "", quantity: "1" });
         } else {
           console.error('Failed to save food entry');
         }
@@ -806,6 +919,8 @@ export default function Home() {
 
   const totalConsumedCalories = foodEntries.reduce((sum, entry) => sum + entry.calories, 0);
   const totalConsumedProtein = foodEntries.reduce((sum, entry) => sum + entry.protein, 0);
+  const totalConsumedFat = foodEntries.reduce((sum, entry) => sum + entry.fat, 0);
+  const totalConsumedCarbs = foodEntries.reduce((sum, entry) => sum + entry.carbs, 0);
   const totalBurnedCalories = exerciseEntries.reduce((sum, entry) => sum + entry.caloriesBurned, 0);
 
   // 目標カロリー + 運動で消費したカロリー - 摂取カロリー = 残りカロリー
@@ -872,6 +987,22 @@ export default function Home() {
                 value={currentFood.protein}
                 onChange={(e) => setCurrentFood(prev => ({ ...prev, protein: e.target.value }))}
                 placeholder="1個のタンパク質(g)"
+                required
+              />
+              <Input
+                type="number"
+                step="0.1"
+                value={currentFood.fat}
+                onChange={(e) => setCurrentFood(prev => ({ ...prev, fat: e.target.value }))}
+                placeholder="1個の脂質(g)"
+                required
+              />
+              <Input
+                type="number"
+                step="0.1"
+                value={currentFood.carbs}
+                onChange={(e) => setCurrentFood(prev => ({ ...prev, carbs: e.target.value }))}
+                placeholder="1個の炭水化物(g)"
                 required
               />
             </FoodInputGrid>
@@ -988,10 +1119,12 @@ export default function Home() {
                     </FoodEntryHeader>
                     <FoodNutrients>
                       <span>🔥 {entry.calories}kcal</span>
-                      <span>💪 {entry.protein}g</span>
+                      <span>💪 P:{entry.protein}g</span>
+                      <span>🟡 F:{entry.fat}g</span>
+                      <span>🍞 C:{entry.carbs}g</span>
                       {entry.quantity > 1 && (
-                        <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
-                          (1個: {entry.unitCalories}kcal, {entry.unitProtein}g)
+                        <span style={{ fontSize: '0.75rem', color: '#9ca3af', gridColumn: 'span 4' }}>
+                          (1個: {entry.unitCalories}kcal, P:{entry.unitProtein}g, F:{entry.unitFat}g, C:{entry.unitCarbs}g)
                         </span>
                       )}
                       <DeleteButton onClick={() => handleDeleteFood(entry.id)}>
@@ -1144,6 +1277,90 @@ export default function Home() {
                     : `${Math.abs(remainingCalories)}kcal オーバー`
                   }
                 </NutritionStatus>
+
+                {/* PFCバランス円グラフ */}
+                <PFCBreakdown>
+                  <PFCItem>
+                    <SmallCircularProgress>
+                      <SmallCircularProgressSvg>
+                        <SmallCircularProgressBackground
+                          cx="30"
+                          cy="30"
+                          r="25"
+                        />
+                        <SmallCircularProgressSegment
+                          cx="30"
+                          cy="30"
+                          r="25"
+                          percentage={100}
+                          offset={0}
+                          color="#ef4444"
+                        />
+                      </SmallCircularProgressSvg>
+                      <SmallCircularProgressLabel>
+                        <SmallCircularProgressValue>P</SmallCircularProgressValue>
+                      </SmallCircularProgressLabel>
+                    </SmallCircularProgress>
+                    <PFCLabel>タンパク質</PFCLabel>
+                    <PFCValue>
+                      {totalConsumedProtein.toFixed(1)}<PFCUnit>g</PFCUnit>
+                    </PFCValue>
+                  </PFCItem>
+
+                  <PFCItem>
+                    <SmallCircularProgress>
+                      <SmallCircularProgressSvg>
+                        <SmallCircularProgressBackground
+                          cx="30"
+                          cy="30"
+                          r="25"
+                        />
+                        <SmallCircularProgressSegment
+                          cx="30"
+                          cy="30"
+                          r="25"
+                          percentage={100}
+                          offset={0}
+                          color="#f59e0b"
+                        />
+                      </SmallCircularProgressSvg>
+                      <SmallCircularProgressLabel>
+                        <SmallCircularProgressValue>F</SmallCircularProgressValue>
+                      </SmallCircularProgressLabel>
+                    </SmallCircularProgress>
+                    <PFCLabel>脂質</PFCLabel>
+                    <PFCValue>
+                      {totalConsumedFat.toFixed(1)}<PFCUnit>g</PFCUnit>
+                    </PFCValue>
+                  </PFCItem>
+
+                  <PFCItem>
+                    <SmallCircularProgress>
+                      <SmallCircularProgressSvg>
+                        <SmallCircularProgressBackground
+                          cx="30"
+                          cy="30"
+                          r="25"
+                        />
+                        <SmallCircularProgressSegment
+                          cx="30"
+                          cy="30"
+                          r="25"
+                          percentage={100}
+                          offset={0}
+                          color="#10b981"
+                        />
+                      </SmallCircularProgressSvg>
+                      <SmallCircularProgressLabel>
+                        <SmallCircularProgressValue>C</SmallCircularProgressValue>
+                      </SmallCircularProgressLabel>
+                    </SmallCircularProgress>
+                    <PFCLabel>炭水化物</PFCLabel>
+                    <PFCValue>
+                      {totalConsumedCarbs.toFixed(1)}<PFCUnit>g</PFCUnit>
+                    </PFCValue>
+                  </PFCItem>
+                </PFCBreakdown>
               </NutritionCard>
 
               <NutritionCard>

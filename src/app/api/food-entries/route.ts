@@ -7,9 +7,13 @@ interface FoodEntry {
   food: string;
   calories: number;
   protein: string;
+  fat?: string;
+  carbs?: string;
   quantity: number;
   unitCalories: number;
   unitProtein: string;
+  unitFat?: string;
+  unitCarbs?: string;
   createdAt: string;
 }
 
@@ -20,12 +24,12 @@ let nextId = 1;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { food, calories, protein, quantity, unitCalories, unitProtein } = body;
+    const { food, calories, protein, fat, carbs, quantity, unitCalories, unitProtein, unitFat, unitCarbs } = body;
 
-    // Simple validation
+    // Simple validation - 旧データ対応で fat, carbs は必須ではない
     if (!food || !calories || !protein || !quantity || !unitCalories || !unitProtein) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'Required fields: food, calories, protein, quantity, unitCalories, unitProtein' },
         { status: 400 }
       );
     }
@@ -36,9 +40,13 @@ export async function POST(request: NextRequest) {
       food,
       calories: parseInt(calories),
       protein: protein.toString(),
+      fat: fat ? fat.toString() : '0',
+      carbs: carbs ? carbs.toString() : '0',
       quantity: parseInt(quantity),
       unitCalories: parseInt(unitCalories),
       unitProtein: unitProtein.toString(),
+      unitFat: unitFat ? unitFat.toString() : '0',
+      unitCarbs: unitCarbs ? unitCarbs.toString() : '0',
       createdAt: new Date().toISOString(),
     };
 
