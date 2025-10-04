@@ -34,6 +34,8 @@ interface ExerciseEntry {
 interface Results {
   dailyCalories: number;
   protein: number;
+  fat: number;
+  carbs: number;
 }
 
 interface FoodEntry {
@@ -716,9 +718,20 @@ export default function Home() {
       protein = profileData.weight * 2.5;
     }
 
+    // PFCバランス計算 (一般的な比率: P:F:C = 25:25:50)
+    const proteinCalories = protein * 4; // タンパク質 1g = 4kcal
+    const remainingCalories = dailyCalories - proteinCalories;
+    const fatCalories = remainingCalories * 0.3; // 30%
+    const carbsCalories = remainingCalories * 0.7; // 70%
+
+    const fat = Math.round(fatCalories / 9); // 脂質 1g = 9kcal
+    const carbs = Math.round(carbsCalories / 4); // 炭水化物 1g = 4kcal
+
     setResults({
       dailyCalories: Math.round(dailyCalories),
-      protein: Math.round(protein)
+      protein: Math.round(protein),
+      fat: fat,
+      carbs: carbs
     });
   };
 
@@ -930,6 +943,10 @@ export default function Home() {
   const adjustedDailyCalories = results ? results.dailyCalories + totalBurnedCalories : 0;
   const calorieProgress = adjustedDailyCalories > 0 ? (totalConsumedCalories / adjustedDailyCalories) * 100 : 0;
   const proteinProgress = results ? (totalConsumedProtein / results.protein) * 100 : 0;
+
+  // PFC進捗率計算
+  const fatProgress = results ? (totalConsumedFat / results.fat) * 100 : 0;
+  const carbsProgress = results ? (totalConsumedCarbs / results.carbs) * 100 : 0;
 
   // Show loading state while checking authentication
   if (!isAuthChecked) {
@@ -1292,45 +1309,21 @@ export default function Home() {
                           cx="30"
                           cy="30"
                           r="25"
-                          percentage={100}
+                          percentage={Math.min(proteinProgress, 100)}
                           offset={0}
                           color="#ef4444"
                         />
                       </SmallCircularProgressSvg>
                       <SmallCircularProgressLabel>
-                        <SmallCircularProgressValue>P</SmallCircularProgressValue>
+                        <SmallCircularProgressValue>{Math.round(proteinProgress)}%</SmallCircularProgressValue>
                       </SmallCircularProgressLabel>
                     </SmallCircularProgress>
                     <PFCLabel>タンパク質</PFCLabel>
                     <PFCValue>
                       {totalConsumedProtein.toFixed(1)}<PFCUnit>g</PFCUnit>
                     </PFCValue>
-                  </PFCItem>
-
-                  <PFCItem>
-                    <SmallCircularProgress>
-                      <SmallCircularProgressSvg>
-                        <SmallCircularProgressBackground
-                          cx="30"
-                          cy="30"
-                          r="25"
-                        />
-                        <SmallCircularProgressSegment
-                          cx="30"
-                          cy="30"
-                          r="25"
-                          percentage={100}
-                          offset={0}
-                          color="#f59e0b"
-                        />
-                      </SmallCircularProgressSvg>
-                      <SmallCircularProgressLabel>
-                        <SmallCircularProgressValue>F</SmallCircularProgressValue>
-                      </SmallCircularProgressLabel>
-                    </SmallCircularProgress>
-                    <PFCLabel>脂質</PFCLabel>
-                    <PFCValue>
-                      {totalConsumedFat.toFixed(1)}<PFCUnit>g</PFCUnit>
+                    <PFCValue style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                      / {results?.protein || 0}g
                     </PFCValue>
                   </PFCItem>
 
@@ -1346,18 +1339,51 @@ export default function Home() {
                           cx="30"
                           cy="30"
                           r="25"
-                          percentage={100}
+                          percentage={Math.min(fatProgress, 100)}
+                          offset={0}
+                          color="#f59e0b"
+                        />
+                      </SmallCircularProgressSvg>
+                      <SmallCircularProgressLabel>
+                        <SmallCircularProgressValue>{Math.round(fatProgress)}%</SmallCircularProgressValue>
+                      </SmallCircularProgressLabel>
+                    </SmallCircularProgress>
+                    <PFCLabel>脂質</PFCLabel>
+                    <PFCValue>
+                      {totalConsumedFat.toFixed(1)}<PFCUnit>g</PFCUnit>
+                    </PFCValue>
+                    <PFCValue style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                      / {results?.fat || 0}g
+                    </PFCValue>
+                  </PFCItem>
+
+                  <PFCItem>
+                    <SmallCircularProgress>
+                      <SmallCircularProgressSvg>
+                        <SmallCircularProgressBackground
+                          cx="30"
+                          cy="30"
+                          r="25"
+                        />
+                        <SmallCircularProgressSegment
+                          cx="30"
+                          cy="30"
+                          r="25"
+                          percentage={Math.min(carbsProgress, 100)}
                           offset={0}
                           color="#10b981"
                         />
                       </SmallCircularProgressSvg>
                       <SmallCircularProgressLabel>
-                        <SmallCircularProgressValue>C</SmallCircularProgressValue>
+                        <SmallCircularProgressValue>{Math.round(carbsProgress)}%</SmallCircularProgressValue>
                       </SmallCircularProgressLabel>
                     </SmallCircularProgress>
                     <PFCLabel>炭水化物</PFCLabel>
                     <PFCValue>
                       {totalConsumedCarbs.toFixed(1)}<PFCUnit>g</PFCUnit>
+                    </PFCValue>
+                    <PFCValue style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                      / {results?.carbs || 0}g
                     </PFCValue>
                   </PFCItem>
                 </PFCBreakdown>
