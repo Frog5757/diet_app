@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import React from "react";
+import { useRouter } from "next/navigation";
 import styled from "@emotion/styled";
 import { css } from "@emotion/react";
 import AuthPage from "./auth/page";
@@ -10,6 +11,13 @@ import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import SettingsIcon from '@mui/icons-material/Settings';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import FlagIcon from '@mui/icons-material/Flag';
 
 interface User {
   id: number;
@@ -59,8 +67,8 @@ interface FoodEntry {
 
 const Container = styled.div`
   min-height: 100vh;
-  background-color: #f9fafb;
-  padding: 1rem;
+  background: #1a1d2e;
+  padding: 2rem 1rem;
 `;
 
 const MainContent = styled.div`
@@ -88,26 +96,43 @@ const RightColumn = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 1.875rem;
-  font-weight: bold;
+  font-size: 2.5rem;
+  font-weight: 800;
   text-align: center;
-  color: #1f2937;
+  color: #ff6b35;
   margin-bottom: 2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 `;
 
 const FormContainer = styled.form`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  background-color: #2d3142;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
   margin-bottom: 1.5rem;
+  border: 2px solid #ff6b35;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(255, 107, 53, 0.3);
+  }
 `;
 
 const FormTitle = styled.h2`
   font-size: 1.25rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #ff6b35;
 `;
 
 const FormGrid = styled.div`
@@ -129,21 +154,28 @@ const Label = styled.label`
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: #a0a0b0;
   margin-bottom: 0.25rem;
 `;
 
 const inputStyles = css`
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 2px solid #4a4d5e;
   border-radius: 0.375rem;
   outline: none;
+  background-color: #383d52;
+  color: #ffffff;
   transition: all 0.15s ease-in-out;
 
+  &::placeholder {
+    color: #7a7d8e;
+  }
+
   &:focus {
-    outline: 2px solid #3b82f6;
-    border-color: #3b82f6;
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+    background-color: #434857;
   }
 `;
 
@@ -158,37 +190,58 @@ const Select = styled.select`
 const Button = styled.button`
   width: 100%;
   margin-top: 1.5rem;
-  background-color: #2563eb;
+  background: #ff6b35;
   color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
   border: none;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
   outline: none;
-  transition: all 0.15s ease-in-out;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
 
-  &:hover {
-    background-color: #1d4ed8;
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6);
+    background: #ff7f4d;
   }
 
-  &:focus {
-    outline: 2px solid #3b82f6;
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #4a4d5e;
   }
 `;
 
 const ResultsContainer = styled.div`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  background-color: #2d3142;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  border: 2px solid #ff6b35;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(255, 107, 53, 0.3);
+  }
 `;
 
 const ResultsTitle = styled.h2`
   font-size: 1.25rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #ff6b35;
 `;
 
 const ResultsGrid = styled.div`
@@ -238,27 +291,31 @@ const Notice = styled.div`
 `;
 
 const FoodInputForm = styled.form`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  border: 2px solid #e5e7eb;
+  background-color: #2d3142;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  border: 2px solid #ff6b35;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(255, 107, 53, 0.3);
+  }
 `;
 
 const FoodInputGrid = styled.div`
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 0.75rem;
   margin-bottom: 1rem;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
   }
 
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
-    grid-template-rows: auto;
   }
 `;
 
@@ -271,11 +328,18 @@ const FoodEntryList = styled.div`
 `;
 
 const FoodEntryItem = styled.div`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-  border-left: 4px solid #3b82f6;
+  background-color: #383d52;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  padding: 1.25rem;
+  border-left: 4px solid #ff6b35;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateX(4px);
+    box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+    background-color: #434857;
+  }
 `;
 
 const FoodEntryHeader = styled.div`
@@ -287,20 +351,20 @@ const FoodEntryHeader = styled.div`
 
 const FoodName = styled.h4`
   font-weight: 600;
-  color: #1f2937;
+  color: #ffffff;
   margin: 0;
 `;
 
 const FoodTime = styled.span`
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #a0a0b0;
 `;
 
 const FoodNutrients = styled.div`
   display: flex;
   gap: 1rem;
   font-size: 0.875rem;
-  color: #4b5563;
+  color: #c0c0d0;
   flex-wrap: wrap;
   align-items: center;
 `;
@@ -347,7 +411,7 @@ const CircularProgressBackground = styled.circle`
 
 const CircularProgressForeground = styled.circle<{ percentage: number; isOverLimit?: boolean }>`
   fill: none;
-  stroke: ${props => props.isOverLimit ? '#ef4444' : '#10b981'};
+  stroke: ${props => props.isOverLimit ? '#ef4444' : 'url(#gradient)'};
   stroke-width: 8;
   stroke-linecap: round;
   stroke-dasharray: ${props => {
@@ -369,13 +433,13 @@ const CircularProgressLabel = styled.div`
 const CircularProgressValue = styled.div`
   font-size: 1.25rem;
   font-weight: bold;
-  color: #1f2937;
+  color: #ff6b35;
   line-height: 1;
 `;
 
 const CircularProgressUnit = styled.div`
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #a0a0b0;
   margin-top: 0.25rem;
 `;
 
@@ -431,7 +495,7 @@ const SmallCircularProgressLabel = styled.div`
 const SmallCircularProgressValue = styled.div`
   font-size: 0.75rem;
   font-weight: bold;
-  color: #1f2937;
+  color: #ff6b35;
 `;
 
 const PFCBreakdown = styled.div`
@@ -447,19 +511,19 @@ const PFCItem = styled.div`
 
 const PFCLabel = styled.div`
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #a0a0b0;
   margin-bottom: 0.25rem;
 `;
 
 const PFCValue = styled.div`
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1f2937;
+  color: #ffffff;
 `;
 
 const PFCUnit = styled.span`
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #a0a0b0;
   font-weight: normal;
 `;
 
@@ -523,40 +587,85 @@ const StatusBackground = styled(StatusContainer)<{ status: 'success' | 'warning'
 `;
 
 const NutritionCard = styled.div`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  background-color: #2d3142;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
   text-align: center;
+  border: 2px solid #ff6b35;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(255, 107, 53, 0.3);
+  }
 `;
 
 const NutritionCardTitle = styled.h3`
   font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #ff6b35;
 `;
 
 
-const LogoutButton = styled.button`
+const HeaderButtons = styled.div`
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background-color: #ef4444;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+`;
+
+const LogoutButton = styled.button`
+  background-color: rgba(255, 255, 255, 0.2);
   color: white;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 2rem;
+  padding: 0.5rem 1.5rem;
   font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 
   &:hover {
-    background-color: #dc2626;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+  }
+`;
+
+const MyPageButton = styled.button`
+  background-color: rgba(255, 107, 53, 0.2);
+  color: #ff6b35;
+  border: 2px solid rgba(255, 107, 53, 0.5);
+  border-radius: 2rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background-color: rgba(255, 107, 53, 0.3);
+    border-color: rgba(255, 107, 53, 0.7);
+    transform: translateY(-2px);
   }
 `;
 
 export default function Home() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
@@ -950,6 +1059,40 @@ export default function Home() {
     const progress = target > 0 ? (consumed / target) * 100 : 0;
     const remaining = target - consumed;
 
+    // タンパク質の場合は摂取「必要」なので、少ないと警告
+    if (type === 'protein') {
+      if (progress >= 100) {
+        return {
+          status: 'success' as const,
+          icon: <TrendingUpIcon sx={{ fontSize: 18 }} />,
+          message: `目標達成！（+${Math.abs(remaining).toFixed(0)}g）`,
+          bgStatus: 'success' as const
+        };
+      } else if (progress >= 80) {
+        return {
+          status: 'info' as const,
+          icon: <TrendingUpIcon sx={{ fontSize: 18 }} />,
+          message: `あと${remaining.toFixed(0)}g 必要（もう少し！）`,
+          bgStatus: 'info' as const
+        };
+      } else if (progress >= 50) {
+        return {
+          status: 'warning' as const,
+          icon: <WarningIcon sx={{ fontSize: 18 }} />,
+          message: `あと${remaining.toFixed(0)}g 必要`,
+          bgStatus: 'warning' as const
+        };
+      } else {
+        return {
+          status: 'error' as const,
+          icon: <ErrorIcon sx={{ fontSize: 18 }} />,
+          message: `あと${remaining.toFixed(0)}g 必要（不足！）`,
+          bgStatus: 'error' as const
+        };
+      }
+    }
+
+    // カロリー・脂質・炭水化物の場合は摂取「可能」なので、多いと警告
     if (progress >= 100) {
       return {
         status: 'error' as const,
@@ -999,15 +1142,24 @@ export default function Home() {
 
   return (
     <Container>
-      <LogoutButton onClick={handleLogout}>
-        ログアウト ({user.email})
-      </LogoutButton>
-      <Title>ダイエット計算アプリ</Title>
+      <HeaderButtons>
+        <MyPageButton onClick={() => router.push('/mypage')}>
+          <SettingsIcon sx={{ fontSize: 18 }} />
+          マイページ
+        </MyPageButton>
+        <LogoutButton onClick={handleLogout}>
+          ログアウト
+        </LogoutButton>
+      </HeaderButtons>
+      <Title>
+        <FitnessCenterIcon sx={{ fontSize: 48 }} />
+        NUTRITION TRACKER
+      </Title>
       <MainContent>
         <LeftColumn>
           {/* 食事入力フォーム */}
           <FoodInputForm onSubmit={handleFoodSubmit}>
-            <FormTitle>🍽️ 食事を記録</FormTitle>
+            <FormTitle><RestaurantIcon sx={{ fontSize: 20, marginRight: 1, verticalAlign: 'middle' }} />食事を記録</FormTitle>
             <FoodInputGrid>
               <Input
                 type="text"
@@ -1028,7 +1180,7 @@ export default function Home() {
                 type="number"
                 value={currentFood.calories}
                 onChange={(e) => setCurrentFood(prev => ({ ...prev, calories: e.target.value }))}
-                placeholder="1個のカロリー"
+                placeholder="カロリー (kcal)"
                 required
               />
               <Input
@@ -1036,7 +1188,7 @@ export default function Home() {
                 step="0.1"
                 value={currentFood.protein}
                 onChange={(e) => setCurrentFood(prev => ({ ...prev, protein: e.target.value }))}
-                placeholder="1個のタンパク質(g)"
+                placeholder="タンパク質 (g)"
                 required
               />
               <Input
@@ -1044,7 +1196,7 @@ export default function Home() {
                 step="0.1"
                 value={currentFood.fat}
                 onChange={(e) => setCurrentFood(prev => ({ ...prev, fat: e.target.value }))}
-                placeholder="1個の脂質(g)"
+                placeholder="脂質 (g)"
                 required
               />
               <Input
@@ -1052,16 +1204,21 @@ export default function Home() {
                 step="0.1"
                 value={currentFood.carbs}
                 onChange={(e) => setCurrentFood(prev => ({ ...prev, carbs: e.target.value }))}
-                placeholder="1個の炭水化物(g)"
+                placeholder="炭水化物 (g)"
                 required
               />
             </FoodInputGrid>
-            <Button type="submit">記録する</Button>
+            <Button
+              type="submit"
+              disabled={!currentFood.food || !currentFood.calories || !currentFood.protein || !currentFood.fat || !currentFood.carbs || !currentFood.quantity}
+            >
+              記録する
+            </Button>
           </FoodInputForm>
 
           {/* 運動入力フォーム */}
           <FoodInputForm onSubmit={(e) => { e.preventDefault(); handleAddExercise(); }}>
-            <FormTitle>🏃‍♂️ 運動を記録</FormTitle>
+            <FormTitle><DirectionsRunIcon sx={{ fontSize: 20, marginRight: 1, verticalAlign: 'middle' }} />運動を記録</FormTitle>
             <FoodInputGrid>
               <div>
                 <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem', display: 'block' }}>
@@ -1147,7 +1304,7 @@ export default function Home() {
 
           {/* 食事記録一覧 */}
           <div>
-            <FormTitle>📝 今日の食事記録</FormTitle>
+            <FormTitle><AssignmentIcon sx={{ fontSize: 20, marginRight: 1, verticalAlign: 'middle' }} />今日の食事記録</FormTitle>
             <FoodEntryList>
               {foodEntries.length === 0 ? (
                 <div style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>
@@ -1189,7 +1346,7 @@ export default function Home() {
 
           {/* 運動記録一覧 */}
           <div>
-            <FormTitle>🏃‍♂️ 今日の運動記録</FormTitle>
+            <FormTitle><FitnessCenterIcon sx={{ fontSize: 20, marginRight: 1, verticalAlign: 'middle' }} />今日の運動記録</FormTitle>
             <FoodEntryList>
               {exerciseEntries.length === 0 ? (
                 <div style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>
@@ -1218,70 +1375,6 @@ export default function Home() {
             </FoodEntryList>
           </div>
 
-          {/* プロフィール設定 */}
-          <FormContainer onSubmit={handleSubmit}>
-            <FormTitle>⚙️ プロフィール設定</FormTitle>
-            <FormGrid>
-              <FormField>
-                <Label>年齢</Label>
-                <Input
-                  type="number"
-                  value={profile.age || ""}
-                  onChange={(e) => setProfile(prev => ({ ...prev, age: parseInt(e.target.value) || 0 }))}
-                  placeholder="例: 25"
-                  required
-                />
-              </FormField>
-
-              <FormField>
-                <Label>性別</Label>
-                <Select
-                  value={profile.gender}
-                  onChange={(e) => setProfile(prev => ({ ...prev, gender: e.target.value as "male" | "female" }))}
-                >
-                  <option value="male">男性</option>
-                  <option value="female">女性</option>
-                </Select>
-              </FormField>
-
-              <FormField>
-                <Label>身長 (cm)</Label>
-                <Input
-                  type="number"
-                  value={profile.height || ""}
-                  onChange={(e) => setProfile(prev => ({ ...prev, height: parseInt(e.target.value) || 0 }))}
-                  placeholder="例: 170"
-                  required
-                />
-              </FormField>
-
-              <FormField>
-                <Label>体重 (kg)</Label>
-                <Input
-                  type="number"
-                  value={profile.weight || ""}
-                  onChange={(e) => setProfile(prev => ({ ...prev, weight: parseInt(e.target.value) || 0 }))}
-                  placeholder="例: 65"
-                  required
-                />
-              </FormField>
-
-
-              <FormField>
-                <Label>目標体型</Label>
-                <Select
-                  value={profile.bodyGoal}
-                  onChange={(e) => setProfile(prev => ({ ...prev, bodyGoal: e.target.value as ProfileData["bodyGoal"] }))}
-                >
-                  <option value="lean_muscle">細マッチョ（引き締まった筋肉質）</option>
-                  <option value="bulk_muscle">マッチョ（筋肉増量重視）</option>
-                </Select>
-              </FormField>
-            </FormGrid>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "保存中..." : "計算して保存"}
-            </Button>
-          </FormContainer>
         </LeftColumn>
 
         <RightColumn>
@@ -1289,9 +1382,15 @@ export default function Home() {
           {results && (
             <>
               <NutritionCard>
-                <NutritionCardTitle>🔥 カロリー摂取状況</NutritionCardTitle>
+                <NutritionCardTitle><LocalFireDepartmentIcon sx={{ fontSize: 22, marginRight: 1, verticalAlign: 'middle' }} />カロリー摂取状況</NutritionCardTitle>
                 <CircularProgress>
                   <CircularProgressSvg>
+                    <defs>
+                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#ff6b35" />
+                        <stop offset="100%" stopColor="#f7931e" />
+                      </linearGradient>
+                    </defs>
                     <CircularProgressBackground
                       cx="60"
                       cy="60"
@@ -1357,7 +1456,7 @@ export default function Home() {
                           r="25"
                           percentage={Math.min(proteinProgress, 100)}
                           offset={0}
-                          color="#ef4444"
+                          color="#ff6b35"
                         />
                       </SmallCircularProgressSvg>
                       <SmallCircularProgressLabel>
@@ -1436,9 +1535,15 @@ export default function Home() {
               </NutritionCard>
 
               <NutritionCard>
-                <NutritionCardTitle>💪 タンパク質摂取状況</NutritionCardTitle>
+                <NutritionCardTitle><FitnessCenterIcon sx={{ fontSize: 22, marginRight: 1, verticalAlign: 'middle' }} />タンパク質摂取状況</NutritionCardTitle>
                 <CircularProgress>
                   <CircularProgressSvg>
+                    <defs>
+                      <linearGradient id="gradient-protein" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#ff6b35" />
+                        <stop offset="100%" stopColor="#f7931e" />
+                      </linearGradient>
+                    </defs>
                     <CircularProgressBackground
                       cx="60"
                       cy="60"
@@ -1482,7 +1587,7 @@ export default function Home() {
           {/* 目標値表示 */}
           {results && (
             <ResultsContainer>
-              <ResultsTitle>🎯 今日の目標</ResultsTitle>
+              <ResultsTitle><FlagIcon sx={{ fontSize: 22, marginRight: 1, verticalAlign: 'middle' }} />今日の目標</ResultsTitle>
               <ResultsGrid>
                 <ResultCard variant="calories">
                   <ResultCardTitle variant="calories">
