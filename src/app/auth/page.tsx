@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import styled from "@emotion/styled";
+import { css } from "@emotion/react";
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 
 const Container = styled.div`
   min-height: 100vh;
-  background-color: #f9fafb;
+  background: #1a1d2e;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,20 +15,26 @@ const Container = styled.div`
 `;
 
 const AuthCard = styled.div`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  background-color: #2d3142;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  padding: 2.5rem;
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
+  border: 2px solid #ff6b35;
 `;
 
 const Title = styled.h1`
-  font-size: 1.875rem;
-  font-weight: bold;
+  font-size: 2rem;
+  font-weight: 800;
   text-align: center;
-  color: #1f2937;
+  color: #ff6b35;
   margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
 const Form = styled.form`
@@ -43,78 +51,106 @@ const FormField = styled.div`
 const Label = styled.label`
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: #a0a0b0;
   margin-bottom: 0.25rem;
 `;
 
-const Input = styled.input`
+const inputStyles = css`
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 2px solid #4a4d5e;
   border-radius: 0.375rem;
   outline: none;
+  background-color: #383d52;
+  color: #ffffff;
   transition: all 0.15s ease-in-out;
 
-  &:focus {
-    ring: 2px;
-    ring-color: #3b82f6;
-    border-color: #3b82f6;
+  &::placeholder {
+    color: #7a7d8e;
   }
+
+  &:focus {
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+    background-color: #434857;
+  }
+`;
+
+const Input = styled.input`
+  ${inputStyles}
+`;
+
+const Select = styled.select`
+  ${inputStyles}
 `;
 
 const Button = styled.button`
   width: 100%;
-  background-color: #2563eb;
+  margin-top: 0.5rem;
+  background: #ff6b35;
   color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
   border: none;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
   outline: none;
-  transition: all 0.15s ease-in-out;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
 
-  &:hover {
-    background-color: #1d4ed8;
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6);
+    background: #ff7f4d;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 
   &:disabled {
-    background-color: #9ca3af;
+    opacity: 0.4;
     cursor: not-allowed;
+    background: #4a4d5e;
   }
 `;
 
 const ToggleButton = styled.button`
   background: none;
   border: none;
-  color: #2563eb;
+  color: #ff6b35;
   cursor: pointer;
   text-decoration: underline;
   margin-top: 1rem;
   text-align: center;
   width: 100%;
+  font-size: 0.875rem;
+  font-weight: 500;
 
   &:hover {
-    color: #1d4ed8;
+    color: #ff7f4d;
   }
 `;
 
 const ErrorMessage = styled.div`
-  background-color: #fef2f2;
-  color: #dc2626;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ff6b6b;
   padding: 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   font-size: 0.875rem;
   margin-bottom: 1rem;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 `;
 
 const SuccessMessage = styled.div`
-  background-color: #f0fdf4;
-  color: #16a34a;
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #4ade80;
   padding: 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   font-size: 0.875rem;
   margin-bottom: 1rem;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 `;
 
 interface User {
@@ -203,7 +239,10 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
   return (
     <Container>
       <AuthCard>
-        <Title>{isLogin ? 'ログイン' : '会員登録'}</Title>
+        <Title>
+          <FitnessCenterIcon sx={{ fontSize: 36 }} />
+          {isLogin ? 'ログイン' : '会員登録'}
+        </Title>
 
         {error && <ErrorMessage>{error}</ErrorMessage>}
         {success && <SuccessMessage>{success}</SuccessMessage>}
@@ -246,21 +285,14 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
               <FormField>
                 <Label>性別</Label>
-                <select
+                <Select
                   value={gender}
                   onChange={(e) => setGender(e.target.value as "male" | "female")}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem 0.75rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem',
-                    outline: 'none'
-                  }}
                   required
                 >
                   <option value="male">男性</option>
                   <option value="female">女性</option>
-                </select>
+                </Select>
               </FormField>
 
               <FormField>
@@ -288,21 +320,14 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
               <FormField>
                 <Label>目標体型</Label>
-                <select
+                <Select
                   value={bodyGoal}
                   onChange={(e) => setBodyGoal(e.target.value as "lean_muscle" | "bulk_muscle")}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem 0.75rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem',
-                    outline: 'none'
-                  }}
                   required
                 >
                   <option value="lean_muscle">細マッチョ</option>
                   <option value="bulk_muscle">マッチョ</option>
-                </select>
+                </Select>
               </FormField>
             </>
           )}
