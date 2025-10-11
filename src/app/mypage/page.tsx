@@ -44,6 +44,12 @@ const Title = styled.h1`
   align-items: center;
   justify-content: center;
   gap: 1rem;
+
+  @media (max-width: 640px) {
+    font-size: 1.5rem;
+    margin-top: 1rem;
+    gap: 0.5rem;
+  }
 `;
 
 const BackButton = styled.button`
@@ -68,6 +74,15 @@ const BackButton = styled.button`
     background-color: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
     transform: translateY(-2px);
+  }
+
+  @media (max-width: 640px) {
+    position: relative;
+    top: 0;
+    left: 0;
+    margin: 0 auto 1rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
   }
 `;
 

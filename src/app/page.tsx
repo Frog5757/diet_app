@@ -107,6 +107,13 @@ const Title = styled.h1`
   align-items: center;
   justify-content: center;
   gap: 1rem;
+
+  @media (max-width: 640px) {
+    font-size: 1.5rem;
+    margin-top: 1rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
 `;
 
 const FormContainer = styled.form`
@@ -621,6 +628,14 @@ const HeaderButtons = styled.div`
   display: flex;
   gap: 0.75rem;
   align-items: center;
+
+  @media (max-width: 640px) {
+    position: relative;
+    top: 0;
+    right: 0;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
 `;
 
 const LogoutButton = styled.button`
@@ -639,6 +654,11 @@ const LogoutButton = styled.button`
     background-color: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
     transform: translateY(-2px);
+  }
+
+  @media (max-width: 640px) {
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
   }
 `;
 
@@ -661,6 +681,11 @@ const MyPageButton = styled.button`
     background-color: rgba(255, 107, 53, 0.3);
     border-color: rgba(255, 107, 53, 0.7);
     transform: translateY(-2px);
+  }
+
+  @media (max-width: 640px) {
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
   }
 `;
 
@@ -691,7 +716,6 @@ export default function Home() {
     amount: "",
     calculatedCalories: 0
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   // Check for existing user session
   useEffect(() => {
@@ -842,34 +866,6 @@ export default function Home() {
     });
   };
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profile),
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setProfile(userData);
-        calculateNutritionFromData(userData);
-      } else {
-        console.error('Failed to save profile');
-      }
-    } catch (error) {
-      console.error('Error saving profile:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleFoodSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (currentFood.food && currentFood.calories && currentFood.protein && currentFood.fat && currentFood.carbs && currentFood.quantity) {
@@ -944,10 +940,12 @@ export default function Home() {
       const newAmount = parseFloat(amount) || 0;
       let calculatedCalories = 0;
 
-      if (prev.exerciseType && newAmount > 0 && profile.weight > 0) {
+      if (prev.exerciseType && newAmount > 0) {
         const exercise = getExerciseById(prev.exerciseType);
         if (exercise) {
-          calculatedCalories = calculateCalories(exercise, newAmount, profile.weight);
+          // 体重が未設定の場合は65kgをデフォルトとして使用
+          const weight = profile.weight > 0 ? profile.weight : 65;
+          calculatedCalories = calculateCalories(exercise, newAmount, weight);
         }
       }
 
@@ -965,10 +963,12 @@ export default function Home() {
       const amount = parseFloat(prev.amount) || 0;
       let calculatedCalories = 0;
 
-      if (exerciseTypeId && amount > 0 && profile.weight > 0) {
+      if (exerciseTypeId && amount > 0) {
         const exercise = getExerciseById(exerciseTypeId);
         if (exercise) {
-          calculatedCalories = calculateCalories(exercise, amount, profile.weight);
+          // 体重が未設定の場合は65kgをデフォルトとして使用
+          const weight = profile.weight > 0 ? profile.weight : 65;
+          calculatedCalories = calculateCalories(exercise, amount, weight);
         }
       }
 
